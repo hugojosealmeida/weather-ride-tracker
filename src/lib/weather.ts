@@ -233,7 +233,11 @@ export function buildDeparturePlan(
   horizonHours = 24,
   selectedTime = now,
 ): DeparturePlan {
-  const start = startOfHour(now);
+  const base = startOfHour(now);
+  // Start the grid on a whole hour that is not in the past: keep the current
+  // hour only when `now` is exactly on the hour, otherwise advance to the
+  // next whole hour so no offered slot has already passed.
+  const start = base < now ? base + 3_600_000 : base;
   const slots: DepartureSlot[] = [];
 
   for (let index = 0; index < horizonHours; index += 1) {
