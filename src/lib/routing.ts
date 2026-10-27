@@ -26,7 +26,7 @@ interface OsrmResponse {
     distance: number;
     duration: number;
     geometry: { coordinates: LngLat[] };
-    legs: Array<{ distance: number; duration: number }>;
+    legs?: Array<{ distance: number; duration: number }>;
   }>;
 }
 
@@ -79,6 +79,6 @@ export async function fetchRoute(
     coordinates: route.geometry.coordinates,
     distance: route.distance,
     duration: route.duration,
-    legs: route.legs.map((leg) => ({ distance: leg.distance, duration: leg.duration })),
+    legs: (route.legs ?? []).map((leg) => ({ distance: leg.distance, duration: leg.duration })),
   };
 }
