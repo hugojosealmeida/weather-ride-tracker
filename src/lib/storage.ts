@@ -24,21 +24,35 @@ export function loadWorkspace(): PersistedWorkspace | null {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
 
-    const parsed = JSON.parse(raw) as Partial<PersistedWorkspace>;
-    const waypoints = Array.isArray(parsed.waypoints)
-      ? parsed.waypoints
-          .filter(
-            (point): point is Waypoint =>
-              !!point &&
-              typeof point === "object" &&
-              typeof point.id === "string" &&
-              isLngLat(point.lngLat),
-          )
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return null;
+    }
+
+    const obj = parsed as Partial<PersistedWorkspace>;
+    const waypoints = Array.isArray(obj.waypoints)
+      ? obj.waypoints
+          .filter((point): point is Waypoint => {
+            if (!point || typeof point !== "object" || Array.isArray(point)) {
+              return false;
+            }
+            const candidate = point as {
+              id?: unknown;
+              lngLat?: unknown;
+              name?: unknown;
+            };
+            if (typeof candidate.id !== "string") return false;
+            if (!isLngLat(candidate.lngLat)) return false;
+            if (candidate.name !== undefined && typeof candidate.name !== "string") {
+              return false;
+            }
+            return true;
+          })
           .slice(0, 12)
       : [];
 
-    const profile = PROFILES.includes(parsed.profile as Profile)
-      ? (parsed.profile as Profile)
+    const profile = PROFILES.includes(obj.profile as Profile)
+      ? (obj.profile as Profile)
       : "bike";
 
     return { waypoints, profile };
