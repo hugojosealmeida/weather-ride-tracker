@@ -29,7 +29,7 @@ const HOURLY_VARIABLES = [
 ] as const;
 
 interface RawHourly {
-  time: string[];
+  time?: string[];
   temperature_2m: Array<number | null>;
   apparent_temperature: Array<number | null>;
   precipitation_probability: Array<number | null>;
@@ -44,34 +44,44 @@ interface RawHourly {
 interface RawForecast {
   latitude: number;
   longitude: number;
-  hourly: RawHourly;
+  hourly?: RawHourly;
 }
 
 function parseHour(time: string): number {
   return Date.parse(`${time}:00Z`);
 }
 
-function normalizeHourly(raw: RawHourly): HourlyForecast[] {
+export function normalizeHourly(raw: unknown): HourlyForecast[] {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new Error("Open-Meteo returned an incomplete forecast.");
+  }
+
+  const candidate = raw as Partial<RawHourly>;
+  if (!Array.isArray(candidate.time)) {
+    throw new Error("Open-Meteo returned an incomplete forecast.");
+  }
+
+  const rawHourly = candidate as RawHourly & { time: string[] };
   const hourly: HourlyForecast[] = [];
 
-  for (let index = 0; index < raw.time.length; index += 1) {
-    const temperature = raw.temperature_2m[index];
+  for (let index = 0; index < rawHourly.time.length; index += 1) {
+    const temperature = rawHourly.temperature_2m?.[index];
     if (temperature === null || temperature === undefined) continue;
 
-    const time = parseHour(raw.time[index]);
+    const time = parseHour(rawHourly.time[index]);
     if (!Number.isFinite(time)) continue;
 
     hourly.push({
       time,
       temperature,
-      feelsLike: raw.apparent_temperature[index] ?? temperature,
-      precipitationProbability: raw.precipitation_probability[index] ?? 0,
-      precipitation: raw.precipitation[index] ?? 0,
-      weatherCode: raw.weather_code[index] ?? 3,
-      windSpeed: raw.wind_speed_10m[index] ?? 0,
-      windGust: raw.wind_gusts_10m[index] ?? 0,
-      windDirection: raw.wind_direction_10m[index] ?? 0,
-      isDay: (raw.is_day[index] ?? 1) === 1,
+      feelsLike: rawHourly.apparent_temperature?.[index] ?? temperature,
+      precipitationProbability: rawHourly.precipitation_probability?.[index] ?? 0,
+      precipitation: rawHourly.precipitation?.[index] ?? 0,
+      weatherCode: rawHourly.weather_code?.[index] ?? 3,
+      windSpeed: rawHourly.wind_speed_10m?.[index] ?? 0,
+      windGust: rawHourly.wind_gusts_10m?.[index] ?? 0,
+      windDirection: rawHourly.wind_direction_10m?.[index] ?? 0,
+      isDay: (rawHourly.is_day?.[index] ?? 1) === 1,
     });
   }
 
@@ -117,10 +127,16 @@ export async function fetchForecasts(
     throw new Error("Open-Meteo returned an incomplete forecast.");
   }
 
-  return samples.map((sample, index) => ({
-    sample,
-    hourly: normalizeHourly(results[index].hourly),
-  }));
+  return samples.map((sample, index) => {
+    const forecast = results[index];
+    if (!forecast || !Array.isArray(forecast.hourly?.time)) {
+      throw new Error("Open-Meteo returned an incomplete forecast.");
+    }
+    return {
+      sample,
+      hourly: normalizeHourly(forecast.hourly),
+    };
+  });
 }
 
 function nearestHour(hourly: HourlyForecast[], timestamp: number): HourlyForecast | null {
