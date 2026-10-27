@@ -1,0 +1,32 @@
+{
+  "name": "weather-ride-tracker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Weather-aware route planner for rides, hikes and drives",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.12.4",
+    "lucide-react": "^0.545.0",
+    "maplibre-gl": "^6.16.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.4",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.5"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "RideCast",
+  "version": "0.1.0",
+  "identifier": "com.hugojosealmeida.ridecast",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "RideCast",
+        "width": 1320,
+        "height": 860,
+        "minWidth": 980,
+        "minHeight": 640,
+        "center": true,
+        "resizable": true,
+        "theme": "Dark",
+        "backgroundColor": "#070b10"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Travel",
+    "shortDescription": "Weather-aware ride planner",
+    "longDescription": "RideCast plans a ride, walk or drive with OpenStreetMap routing and shows the hourly Open-Meteo forecast along the way, including the best departure window.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
+  }
+}
