@@ -87,9 +87,28 @@ function decoratePin(element: HTMLElement, index: number, total: number) {
   element.textContent = String.fromCharCode(65 + index);
 }
 
-function showSamplePopup(map: MapLibreMap, feature: MapGeoJSONFeature) {
+const activeSamplePopups = new WeakMap<MapLibreMap, Popup>();
+
+export function showSamplePopup(map: MapLibreMap, feature: MapGeoJSONFeature) {
   const properties = feature.properties ?? {};
   const coordinates = (feature.geometry as Point).coordinates as [number, number];
+
+  // Only one sample popup may be visible at a time: close any previous one
+  // before creating the next.
+  const previous = activeSamplePopups.get(map);
+  if (previous) {
+    try {
+      previous.remove();
+    } catch {
+      // Ignore removal errors from already-removed popups.
+    }
+    activeSamplePopups.delete(map);
+  }
+
+  // Ensure no stale sample popup containers remain in the DOM.
+  if (typeof document !== "undefined") {
+    document.querySelectorAll(".ride-popup").forEach((node) => node.remove());
+  }
 
   const popup = document.createElement("div");
   popup.className = "popup-card";
@@ -112,10 +131,25 @@ function showSamplePopup(map: MapLibreMap, feature: MapGeoJSONFeature) {
 
   popup.append(head, body, meta);
 
-  new Popup({ offset: 14, closeButton: false, className: "ride-popup" })
+  const instance = new Popup({ offset: 14, closeButton: false, className: "ride-popup" })
     .setLngLat(coordinates)
     .setDOMContent(popup)
     .addTo(map);
+
+  activeSamplePopups.set(map, instance);
+
+  const handleClose = () => {
+    if (activeSamplePopups.get(map) === instance) {
+      activeSamplePopups.delete(map);
+    }
+  };
+  try {
+    instance.on("close", handleClose);
+  } catch {
+    // Some (test) doubles do not support events; tracking still works.
+  }
+
+  return instance;
 }
 
 export function MapCanvas({
@@ -258,6 +292,15 @@ export function MapCanvas({
     });
 
     return () => {
+      const activePopup = activeSamplePopups.get(map);
+      if (activePopup) {
+        try {
+          activePopup.remove();
+        } catch {
+          // Ignore.
+        }
+        activeSamplePopups.delete(map);
+      }
       markersRef.current.clear();
       map.remove();
       mapRef.current = null;
